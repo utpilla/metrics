@@ -3,7 +3,7 @@ use metrics::Counter;
 
 // cargo bench --bench counter
 pub fn counter_benchmark(c: &mut Criterion) {
-    let tracker = Counter::new();
+    let tracker = Counter::new_with_periodic_flush();
 
     let attributes1 = [("key1", "value1")];
 

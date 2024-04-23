@@ -81,18 +81,60 @@ fn calculate_hash(values: &[(&'static str, &'static str)]) -> u64 {
     hasher.finish()
 }
 
+#[derive(Clone)]
 pub struct Counter {
-    metric_points_map: RwLock<HashMap<MetricAttributes, MetricPoint>>,
-    zero_attribute_point : AtomicUsize,
+    inner : Arc<CounterInner>,
 }
 
 impl Counter {
     pub fn new() -> Counter {
-        let counter = Counter {
+        Counter {
+            inner: Arc::new(CounterInner::new()),
+        }
+    }
+
+    pub fn new_with_periodic_flush() -> Counter {
+        let counter = Counter::new();
+        let counter_clone = counter.clone();
+        std::thread::spawn(move || {
+            loop {
+                std::thread::sleep(std::time::Duration::from_secs(10));
+                counter_clone.cleanup();
+            }
+        });
+        counter
+    }
+
+    pub fn add(&self, name: &'static str, attributes: &[(&'static str, &'static str)]) {
+        self.inner.add(name, attributes);
+    }
+
+    pub fn display_metrics(&self) {
+        self.inner.display_metrics();
+    }
+
+    pub fn cleanup(&self) {
+        self.inner.cleanup();
+    }
+}
+
+pub struct CounterInner {
+    metric_points_map: RwLock<HashMap<MetricAttributes, MetricPoint>>,
+    zero_attribute_point : AtomicUsize,
+}
+
+impl CounterInner {
+    pub fn new() -> CounterInner {
+        let counter = CounterInner {
             metric_points_map: RwLock::new(HashMap::new()),
             zero_attribute_point: AtomicUsize::new(0),
         };
         counter
+    }
+
+    pub fn cleanup(&self) {
+        self.metric_points_map.write().unwrap().clear();
+        self.zero_attribute_point.store(0, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn add(&self, _name: &'static str, attributes: &[(&'static str, &'static str)]) {

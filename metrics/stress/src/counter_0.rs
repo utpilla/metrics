@@ -4,7 +4,7 @@ use metrics::Counter;
 mod throughput;
 
 lazy_static! {
-    static ref COUNTER: Counter = Counter::new();
+    static ref COUNTER: Counter = Counter::new_with_cleanup();
 }
 
 fn main() {

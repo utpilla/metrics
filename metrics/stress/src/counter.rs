@@ -5,7 +5,7 @@ use rand::{rngs::SmallRng, Rng, SeedableRng};
 mod throughput;
 
 lazy_static! {
-    static ref COUNTER: Counter = Counter::new();
+    static ref COUNTER: Counter = Counter::new_with_periodic_flush();
     static ref ATTRIBUTE_VALUES: [&'static str; 10] = [
         "value1", "value2", "value3", "value4", "value5", "value6", "value7", "value8", "value9",
         "value10"
