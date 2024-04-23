@@ -1,7 +1,7 @@
 use std::hash::{Hash, Hasher};
 use std::{
     collections::HashMap,
-    sync::{atomic::AtomicU64, RwLock},
+    sync::{atomic::{AtomicU64, AtomicUsize}, RwLock},
 };
 
 use std::collections::hash_map::DefaultHasher;
@@ -74,17 +74,28 @@ fn calculate_hash(values: &[(&'static str, &'static str)]) -> u64 {
 pub struct Counter {
     metric_points_map: RwLock<HashMap<MetricAttributes, usize>>,
     metric_points: RwLock<Vec<MetricPoint>>,
+    current_index: AtomicUsize,
 }
 
 impl Counter {
     pub fn new() -> Counter {
-        Counter {
+        let mut points = Vec::new();
+        points.push(MetricPoint::new("default", vec![]));
+        let counter = Counter {
             metric_points_map: RwLock::new(HashMap::new()),
-            metric_points: RwLock::new(Vec::new()),
-        }
+            metric_points: RwLock::new(points),
+            current_index: AtomicUsize::new(1),
+        };
+        counter
     }
 
     pub fn add(&self, name: &'static str, attributes: &[(&'static str, &'static str)]) {
+        if attributes.is_empty() {
+            let metric_points = self.metric_points.read().unwrap();
+            metric_points[0].add(1);
+            return;
+        }
+
         let metric_attributes = MetricAttributes::new(attributes);
         let metric_points_map = self.metric_points_map.read().unwrap();
         if let Some(&index) = metric_points_map.get(&metric_attributes) {

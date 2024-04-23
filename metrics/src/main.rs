@@ -11,5 +11,8 @@ fn main() {
     counter.add("counter", &attributes_in_diff_order2);
     counter.add("counter", &attributes);
     counter.add("counter", &attributes_in_diff_order);
+
+    counter.add("counter2", &vec![]);
+    counter.add("counter2", &vec![]);
     counter.display_metrics();
 }
