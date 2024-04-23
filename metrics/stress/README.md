@@ -1,5 +1,5 @@
 # Run Stress Tests
 
 ```sh
-cargo run --release --bin metrics
+cargo run --release --bin counter
 ```

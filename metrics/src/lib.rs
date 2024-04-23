@@ -1,9 +1,10 @@
 use std::hash::{Hash, Hasher};
 use std::{
     collections::HashMap,
-    hash::DefaultHasher,
     sync::{atomic::AtomicU64, RwLock},
 };
+
+use std::collections::hash_map::DefaultHasher;
 
 pub struct MetricPoint {
     name: &'static str,
