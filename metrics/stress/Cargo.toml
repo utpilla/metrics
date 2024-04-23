@@ -1,0 +1,18 @@
+[package]
+name = "stress"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]] # Bin to run the counter stress tests
+name = "counter"
+path = "src/counter.rs"
+doc = false
+
+[dependencies]
+ctrlc = "3.2.5"
+lazy_static = "1.4.0"
+num_cpus = "1.15.0"
+metrics = { path = ".." }
+rand = { version = "0.8.4", features = ["small_rng"] }
+num-format = "0.4.4"
