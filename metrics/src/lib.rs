@@ -1,4 +1,5 @@
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 use std::{
     collections::HashMap,
     sync::{atomic::{AtomicU64, AtomicUsize}, RwLock},
@@ -6,28 +7,37 @@ use std::{
 
 use std::collections::hash_map::DefaultHasher;
 
+#[derive(Clone)]
 pub struct MetricPoint {
-    name: &'static str,
+    inner: Arc<MetricPointInner>,
+}
+
+pub struct MetricPointInner {
     sum: AtomicU64,
-    attributes: Vec<(&'static str, &'static str)>,
+}
+
+impl MetricPointInner {
+    fn new() -> MetricPointInner {
+        MetricPointInner {
+            sum: AtomicU64::new(1),
+        }
+    }
 }
 
 impl MetricPoint {
-    pub fn new(name: &'static str, attributes: Vec<(&'static str, &'static str)>) -> MetricPoint {
+    pub fn new() -> MetricPoint {
         MetricPoint {
-            name,
-            sum: AtomicU64::new(1),
-            attributes,
+            inner: Arc::new(MetricPointInner::new()),
         }
     }
 
     pub fn add(&self, value: u32) {
-        self.sum
+        self.inner.sum
             .fetch_add(value as u64, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn get_sum(&self) -> u32 {
-        self.sum.load(std::sync::atomic::Ordering::Relaxed) as u32
+        self.inner.sum.load(std::sync::atomic::Ordering::Relaxed) as u32
     }
 }
 
@@ -72,8 +82,7 @@ fn calculate_hash(values: &[(&'static str, &'static str)]) -> u64 {
 }
 
 pub struct Counter {
-    metric_points_map: RwLock<HashMap<MetricAttributes, usize>>,
-    metric_points: RwLock<Vec<MetricPoint>>,
+    metric_points_map: RwLock<HashMap<MetricAttributes, MetricPoint>>,
     zero_attribute_point : AtomicUsize,
 }
 
@@ -81,13 +90,12 @@ impl Counter {
     pub fn new() -> Counter {
         let counter = Counter {
             metric_points_map: RwLock::new(HashMap::new()),
-            metric_points: RwLock::new(Vec::new()),
             zero_attribute_point: AtomicUsize::new(0),
         };
         counter
     }
 
-    pub fn add(&self, name: &'static str, attributes: &[(&'static str, &'static str)]) {
+    pub fn add(&self, _name: &'static str, attributes: &[(&'static str, &'static str)]) {
         if attributes.is_empty() {
             self.zero_attribute_point.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             return;
@@ -95,43 +103,38 @@ impl Counter {
 
         let metric_attributes = MetricAttributes::new(attributes);
         let metric_points_map = self.metric_points_map.read().unwrap();
-        if let Some(&index) = metric_points_map.get(&metric_attributes) {
-            let metric_points = self.metric_points.read().unwrap();
-            metric_points[index].add(1);
+        if let Some(metric_point) = metric_points_map.get(&metric_attributes) {
+            metric_point.add(1);
         } else {
             drop(metric_points_map);
             let mut metric_points_map = self.metric_points_map.write().unwrap();
-            let mut metric_points = self.metric_points.write().unwrap();
             // sort and try again
             let mut attributes_as_vec = attributes.to_vec();
             attributes_as_vec.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
             let metric_attributes_sorted = MetricAttributes::new_from_vec(attributes_as_vec);
 
-            if let Some(&index) = metric_points_map.get(&metric_attributes_sorted) {
-                metric_points[index].add(1);
+            if let Some(metric_point) = metric_points_map.get(&metric_attributes_sorted) {
+                metric_point.add(1);
             } else {
                 // insert both incoming order and sorted order
-                let index = metric_points.len();
-
                 // insert in incoming order.
-                metric_points_map.insert(metric_attributes, index);
+                let mp_new = MetricPoint::new();
+                metric_points_map.insert(metric_attributes, mp_new.clone());
 
                 // insert in sorted order
-                metric_points_map.insert(metric_attributes_sorted.clone(), index);
-                metric_points.push(MetricPoint::new(name, metric_attributes_sorted.attributes));
+                metric_points_map.insert(metric_attributes_sorted.clone(), mp_new);
             }
         }
     }
 
     pub fn display_metrics(&self) {
         println!("Metrics:");
-        let metric_points = self.metric_points.read().unwrap();
-        for metric_point in metric_points.iter() {
+        let metric_points_map = self.metric_points_map.read().unwrap();
+        for metric_point in metric_points_map.iter() {
             println!(
-                "Name: {}, Attributes: {:?} Sum: {}",
-                metric_point.name,
-                metric_point.attributes,
-                metric_point.get_sum()
+                "Attributes: {:?} Sum: {}",
+                metric_point.0.attributes,
+                metric_point.1.get_sum(),
             );
         }
 
