@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use metrics::Counter;
+use metrics::counter::Counter;
 
 mod throughput;
 

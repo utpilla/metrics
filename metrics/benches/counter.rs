@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use metrics::Counter;
+use metrics::counter::Counter;
 
 // cargo bench --bench counter
 pub fn counter_benchmark(c: &mut Criterion) {

@@ -1,6 +1,6 @@
 use std::thread;
 
-use metrics::Counter;
+use metrics::counter::Counter;
 
 fn main() {
     let counter = Counter::new_with_periodic_flush();
