@@ -9,6 +9,11 @@ name = "counter"
 path = "src/counter.rs"
 doc = false
 
+[[bin]] # Bin to run the atomiccounter stress tests
+name = "atomic"
+path = "src/atomic.rs"
+doc = false
+
 [dependencies]
 ctrlc = "3.2.5"
 lazy_static = "1.4.0"

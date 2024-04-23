@@ -74,25 +74,22 @@ fn calculate_hash(values: &[(&'static str, &'static str)]) -> u64 {
 pub struct Counter {
     metric_points_map: RwLock<HashMap<MetricAttributes, usize>>,
     metric_points: RwLock<Vec<MetricPoint>>,
-    current_index: AtomicUsize,
+    zero_attribute_point : AtomicUsize,
 }
 
 impl Counter {
     pub fn new() -> Counter {
-        let mut points = Vec::new();
-        points.push(MetricPoint::new("default", vec![]));
         let counter = Counter {
             metric_points_map: RwLock::new(HashMap::new()),
-            metric_points: RwLock::new(points),
-            current_index: AtomicUsize::new(1),
+            metric_points: RwLock::new(Vec::new()),
+            zero_attribute_point: AtomicUsize::new(0),
         };
         counter
     }
 
     pub fn add(&self, name: &'static str, attributes: &[(&'static str, &'static str)]) {
         if attributes.is_empty() {
-            let metric_points = self.metric_points.read().unwrap();
-            metric_points[0].add(1);
+            self.zero_attribute_point.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             return;
         }
 
@@ -137,6 +134,11 @@ impl Counter {
                 metric_point.get_sum()
             );
         }
+
+        println!(
+            "Zero attribute point: {}",
+            self.zero_attribute_point.load(std::sync::atomic::Ordering::Relaxed)
+        );
     }
 }
 
