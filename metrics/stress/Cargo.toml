@@ -9,7 +9,17 @@ name = "counter"
 path = "src/counter.rs"
 doc = false
 
-[[bin]] # Bin to run the atomiccounter stress tests
+[[bin]] # Bin to run the counter with no attributes stress tests
+name = "counter_0"
+path = "src/counter_0.rs"
+doc = false
+
+[[bin]] # Bin to run the counter with no random stress tests
+name = "counter_no_random"
+path = "src/counter_no_random.rs"
+doc = false
+
+[[bin]] # Bin to run the atomic stress tests
 name = "atomic"
 path = "src/atomic.rs"
 doc = false

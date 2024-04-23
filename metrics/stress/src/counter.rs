@@ -13,7 +13,7 @@ lazy_static! {
 }
 
 fn main() {
-    throughput::test_throughput(counter_no_attr);
+    throughput::test_throughput(counter);
 }
 
 fn counter() {
@@ -30,21 +30,5 @@ fn counter() {
     ];
 
     COUNTER.add("test", &attributes3);
-}
-
-
-fn counter_no_random() {
-    
-    let attributes3 = [
-        ("key1", "value1"),
-        ("key2", "value2"),
-        ("key3", "value3"),
-    ];
-
-    COUNTER.add("test", &attributes3);
-}
-
-fn counter_no_attr() {
-    COUNTER.add("test", &vec![]);
 }
 
