@@ -1,5 +1,4 @@
 use lazy_static::lazy_static;
-use metrics::Counter;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 mod throughput;
@@ -17,7 +16,7 @@ impl AtomicCounter {
     }
 
     fn add(&self) {
-        self.sum.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.sum.fetch_add(1, Ordering::Relaxed);
     }
 }
 

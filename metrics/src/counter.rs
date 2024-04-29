@@ -5,7 +5,7 @@ use std::{
     sync::{atomic::{AtomicU64, AtomicUsize}, RwLock},
 };
 
-use std::collections::hash_map::DefaultHasher;
+use ahash::{AHasher, RandomState};
 
 #[derive(Clone)]
 pub struct MetricPoint {
@@ -73,7 +73,7 @@ impl Hash for MetricAttributes {
 }
 
 fn calculate_hash(values: &[(&'static str, &'static str)]) -> u64 {
-    let mut hasher = DefaultHasher::new();
+    let mut hasher = AHasher::default();
     values.iter().fold(&mut hasher, |mut hasher, item| {
         item.hash(&mut hasher);
         hasher
@@ -119,14 +119,14 @@ impl Counter {
 }
 
 pub struct CounterInner {
-    metric_points_map: RwLock<HashMap<MetricAttributes, MetricPoint>>,
+    metric_points_map: RwLock<HashMap<MetricAttributes, MetricPoint, RandomState>>,
     zero_attribute_point : AtomicUsize,
 }
 
 impl CounterInner {
     pub fn new() -> CounterInner {
         let counter = CounterInner {
-            metric_points_map: RwLock::new(HashMap::new()),
+            metric_points_map: RwLock::new(HashMap::default()),
             zero_attribute_point: AtomicUsize::new(0),
         };
         counter
