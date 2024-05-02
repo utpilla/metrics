@@ -149,6 +149,7 @@ impl CounterInner {
             metric_point.add(1);
         } else {
             drop(metric_points_map);
+            // TODO: Dedupe keys.
             let mut metric_points_map = self.metric_points_map.write().unwrap();
             // sort and try again
             let mut attributes_as_vec = attributes.to_vec();
